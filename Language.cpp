@@ -1,4 +1,4 @@
-﻿#define _CRT_SECURE_NO_WARNINGS                
+#define _CRT_SECURE_NO_WARNINGS                
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,6 +75,8 @@ char* DeleteSpaces(char*);
 NODE* BuildTree(FILE*);
 
 NODE* OptimizedOut(NODE*, FILE*);
+
+NODE* GetIf();
 
 NODE* GetG(char*);
 
@@ -200,11 +202,9 @@ NODE* BuildTree(FILE* input)
 
 	char* str = (char*)calloc(size, sizeof(char));
 
-	fscanf(input, "%[^EOF]", str);
+	fscanf(input, "%[^@]", str);
 
 	str = DeleteSpaces(str);
-
-	//str[strlen(str)] = '\0';
 
 	NODE* head = GetG(str);
 
@@ -243,7 +243,7 @@ NODE* GetG(char* str)
 
 NODE* GetNextLine()
 {
-	NODE* left_node = GetOperator();
+	NODE* left_node = GetIf();
 
 	while (*current_symbol == ';')
 	{
@@ -256,7 +256,39 @@ NODE* GetNextLine()
 		NODE* new_node = Create_node(Operator, operator_symbols);
 
 		new_node->left = left_node;
-		new_node->right = GetOperator();
+		new_node->right = GetIf();
+
+		left_node = new_node;
+	}
+
+	return left_node;
+}
+
+NODE* GetIf()
+{
+	NODE* left_node = GetOperator();
+
+	while (!strncmp(current_symbol, "if", 2))
+	{
+		char* Operator = (char*)calloc(5, sizeof(char));
+
+		sscanf(current_symbol, "%[if]", Operator);
+
+		current_symbol += 2;
+
+		NODE* new_node = Create_node(Operator, operator_symbols);
+
+		new_node->right = GetP();
+		//printf("%c", *(current_symbol));
+		new_node->left = GetNextLine();
+
+		//printf("%c", *current_symbol);
+
+		assert(!strncmp(current_symbol, "endif", 5));
+
+		//printf("ok");
+
+		current_symbol += 5;
 
 		left_node = new_node;
 	}
@@ -363,7 +395,7 @@ NODE* GetP()
 	if (*current_symbol == '(')
 	{
 		current_symbol++;
-		NODE* inside = GetE();
+		NODE* inside = GetOperator();
 		assert(*current_symbol == ')');
 		current_symbol++;
 		return inside;
